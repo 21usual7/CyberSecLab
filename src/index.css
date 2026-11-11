@@ -1,0 +1,132 @@
+@import 'tailwindcss';
+
+/* Dark-first "oscilloscope" theme tokens. Light mode is derived below. */
+:root {
+  --bg: #0b0e14;
+  --panel: #121722;
+  --panel-2: #0e131c;
+  --border: #223049;
+  --text: #c9d4e3;
+  --text-dim: #7d8aa0;
+  --text-hi: #f2f6fc;
+  --accent: #35e0c8; /* teal */
+  --accent-2: #7aa2ff; /* blue */
+  --spec: #ffb454; /* speculative / amber */
+  --danger: #ff6b6b; /* squashed / mispredict */
+  --ok: #7ee787;
+  --mono: ui-monospace, 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+:root:not([data-theme='dark']) {
+  @media (prefers-color-scheme: light) {
+    --bg: #f5f7fb;
+    --panel: #ffffff;
+    --panel-2: #eef2f8;
+    --border: #d4ddea;
+    --text: #243049;
+    --text-dim: #5e6b82;
+    --text-hi: #0b1220;
+    --accent: #0d9488;
+    --accent-2: #3b5bdb;
+    --spec: #c2410c;
+    --danger: #dc2626;
+    --ok: #16a34a;
+  }
+}
+
+:root[data-theme='light'] {
+  --bg: #f5f7fb;
+  --panel: #ffffff;
+  --panel-2: #eef2f8;
+  --border: #d4ddea;
+  --text: #243049;
+  --text-dim: #5e6b82;
+  --text-hi: #0b1220;
+  --accent: #0d9488;
+  --accent-2: #3b5bdb;
+  --spec: #c2410c;
+  --danger: #dc2626;
+  --ok: #16a34a;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    14px/1.5 system-ui,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.mono {
+  font-family: var(--mono);
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.panel-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+/* thin scrollbars inside panels */
+.scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  user-select: none;
+}
+.btn:hover {
+  border-color: var(--accent-2);
+  color: var(--text-hi);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-accent {
+  background: color-mix(in srgb, var(--accent) 18%, var(--panel-2));
+  border-color: var(--accent);
+  color: var(--text-hi);
+}
+
+/* CodeMirror sizing */
+.cm-editor {
+  height: 100%;
+  font-size: 13px;
+}
+.cm-editor .cm-scroller {
+  font-family: var(--mono);
+}
