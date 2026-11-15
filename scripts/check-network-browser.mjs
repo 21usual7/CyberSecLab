@@ -50,7 +50,7 @@ try {
     await input('Шкала времени', end)
     await wait("document.querySelector('.net-stage-heading').textContent.includes('ЗАВЕРШЁН')")
   }
-  const send = async () => { await click('Отправить'); await finish() }
+  const send = async () => { await click('Отправить'); await wait("!!document.querySelector('.net-forecast')"); await click('Отправить без прогноза'); await finish() }
   const tool = async text => { await run(`Array.from(document.querySelectorAll('.net-tool-nav button')).find(b=>b.textContent.includes(${JSON.stringify(text)})).click()`) }
   const screenshot = async name => { const data = await cdp('Page.captureScreenshot', { format: 'png' }, sessionId); await writeFile(join(tmpdir(), name), Buffer.from(data.data, 'base64')) }
   await cdp('Runtime.enable', {}, sessionId)
@@ -65,6 +65,9 @@ try {
   await wait("!!document.querySelector('.net-builder')")
   await input('Данные пакета', 'this is my packet', 'textarea')
   await click('Запустить мой пакет')
+  await wait("!!document.querySelector('.net-forecast')")
+  await run("Array.from(document.querySelectorAll('.net-forecast > div button')).find(b=>b.textContent.startsWith('Сервер')).click()")
+  await click('Проверить прогноз')
   await wait("!!document.querySelector('.net-flying')")
   assert.equal(await run("document.querySelectorAll('.net-side-column').length"), 0, 'Builder did not close on launch')
   await click('Пауза')
@@ -77,11 +80,12 @@ try {
   await click('Пауза')
   await screenshot('network-flight.png')
   await run("document.querySelector('.net-machine').dispatchEvent(new MouseEvent('click',{bubbles:true}))")
-  assert(await run("!!document.querySelector('.net-device-inspector')"), 'Device click did not open inspector')
+  assert(await run("!!document.querySelector('.net-device-inspector .net-processing li.active')"), 'Device processing was not shown')
   await run("document.querySelector('button[aria-label=\"Закрыть панель\"]').click()")
   await wait("document.activeElement?.getAttribute('data-tool') === 'device'")
   await finish()
   assert((await run("document.querySelector('.net-explanation h2').textContent")).includes('Echo Reply'))
+  assert(await run("!!document.querySelector('.net-forecast-result.correct')"), 'Prediction was not checked against visible evidence')
   await tool('Устройства')
   assert((await run("document.querySelector('.net-device-inspector').textContent")).includes('02:00:00:00:00:0b'))
   await tool('История')
@@ -97,8 +101,11 @@ try {
   await tool('История')
   assert((await run("document.querySelector('.net-exchange-stats').textContent")).includes('ARP-запросов A 0'))
 
+  await tool('Сравнить')
+  assert((await run("document.querySelector('.net-comparison').textContent")).includes('ARP'), 'Comparison did not show learned-state divergence')
+
   // Exercise every lab through visible navigation and the single experiment selector.
-  for (let module = 0; module < 5; module++) {
+  for (let module = 0; module < 6; module++) {
     await click('Модули')
     const title = await run(`document.querySelectorAll('.net-module-nav button strong')[${module}].textContent`)
     await run(`document.querySelectorAll('.net-module-nav button')[${module}].click()`)
@@ -108,9 +115,9 @@ try {
       await run(`(() => { const el=document.querySelector('#net-experiment'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(el,${JSON.stringify(String(mission))}); el.dispatchEvent(new Event('change',{bubbles:true})); })()`)
       await wait(`document.querySelector('#net-experiment').value === '${mission}'`)
       await send()
-      if (module === 4 && mission === 1) await send()
+      if (module === 5 && mission === 1) await send()
       await wait("!!document.querySelector('.net-mission-success')")
-      if (module === 2 && mission === 0) {
+      if (module === 3 && mission === 0) {
         await tool('Устройства')
         await run("Array.from(document.querySelectorAll('.net-device-tabs button')).find(b=>b.textContent.includes('Шлюз')).click()")
         assert((await run("document.querySelector('.net-nat-state').textContent")).includes('40000'))
@@ -118,7 +125,54 @@ try {
       }
     }
   }
-  assert.equal(await run("JSON.parse(localStorage.getItem('network-labs-observations-v2')).length"), 15)
+  assert.equal(await run("JSON.parse(localStorage.getItem('network-labs-observations-v2')).length"), 17)
+  // Unknown fault: a wrong repair must not pass; a correct repair needs a fresh probe.
+  async function selectModule(id) {
+    await click('Модули')
+    await run(`document.querySelector('.net-module-nav button[data-module="${id}"]').click()`)
+    await wait("!document.querySelector('.net-module-nav')")
+  }
+  await selectModule('diagnostic')
+  await tool('Изменить пакет')
+  assert(!(await run("!!document.querySelector('.net-conditions')")), 'Diagnostic exposed its hidden conditions')
+  await run("document.querySelector('button[aria-label=\"Закрыть панель\"]').click()")
+  await send()
+  const failure = await run("document.querySelector('.net-explanation h2').textContent")
+  const correct = failure.includes('маршрута') ? 0 : failure.includes('filtered') ? 2 : 1
+  await run(`document.querySelectorAll('.net-diagnosis > div button')[${(correct + 1) % 3}].click()`)
+  await click('Применить одно исправление')
+  await send()
+  assert(!(await run("!!document.querySelector('.net-mission-success')")), 'Wrong repair completed the diagnosis')
+  await run(`document.querySelectorAll('.net-diagnosis > div button')[${correct}].click()`)
+  await click('Применить одно исправление')
+  await send()
+  await wait("!!document.querySelector('.net-mission-success')")
+
+  // Final configuration lab: actual interface changes, then a least-privilege ingress ACL.
+  await selectModule('workshop')
+  await tool('Проверить политику')
+  await click('Проверить связность и доступ')
+  assert.equal(await run("document.querySelectorAll('.net-security-audit article.passed').length"), 0)
+  await tool('Консоль шлюза')
+  await input('Команды шлюза', 'enable\nconfigure terminal\ninterface GigabitEthernet0/0\nip address 192.168.1.1 255.255.255.0\nno shutdown\nend', 'textarea')
+  await click('Выполнить команды')
+  await tool('Проверить политику')
+  await click('Проверить связность и доступ')
+  assert.equal(await run("document.querySelectorAll('.net-security-audit article.passed').length"), 2)
+  await tool('Консоль шлюза')
+  await input('Команды шлюза', 'configure terminal\naccess-list 100 permit icmp host 192.168.1.10 host 203.0.113.20\naccess-list 100 permit tcp host 192.168.1.10 host 203.0.113.20 eq 80\naccess-list 100 deny ip any any\ninterface GigabitEthernet0/0\nip access-group 100 in\nend', 'textarea')
+  await click('Выполнить команды')
+  await tool('Проверить политику')
+  await click('Проверить связность и доступ')
+  assert.equal(await run("document.querySelectorAll('.net-security-audit article.passed').length"), 5)
+  await wait("!!document.querySelector('.net-mission-success')")
+  await screenshot('network-workshop.png')
+  await run("document.querySelector('.net-security-audit article[data-probe=\"ssh\"] details').open = true")
+  await run("document.querySelector('.net-security-audit article[data-probe=\"ssh\"] button').click()")
+  await finish()
+  assert((await run("document.querySelector('.net-explanation h2').textContent")).includes('DENY'))
+  assert.equal(await run("JSON.parse(localStorage.getItem('network-labs-observations-v2')).length"), 19)
+
   await tool('Изменить пакет')
   await input('TTL', 0)
   assert(await run("document.querySelector('.net-send').disabled"))
@@ -134,9 +188,9 @@ try {
   await run('window.__networkQAReload = true')
   await cdp('Page.reload', {}, sessionId)
   await wait("!window.__networkQAReload && !!document.querySelector('.net-progress-count strong')")
-  assert((await run("document.querySelector('.net-progress-count strong').textContent")).startsWith('15'))
+  assert((await run("document.querySelector('.net-progress-count strong').textContent")).startsWith('19'))
   assert.deepEqual(exceptions, [], 'Browser runtime exception')
-  console.log('PASS: focused initial view, single tool panel, device click and focus restoration, continuous motion, pause/resume, custom payload, rewind, all 15 labs, mobile layout, persisted progress, no runtime exceptions')
+  console.log('PASS: focused initial view, single tool panel, device click and focus restoration, continuous motion, forecasts, device processing, comparisons, all 19 labs, diagnosis and repair, CLI configuration and security probes, mobile layout, persisted progress, no runtime exceptions')
 } finally {
   clearTimeout(timeout)
   await cdp('Browser.close').catch(() => {})

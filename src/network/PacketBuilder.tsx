@@ -12,9 +12,9 @@ const HELP = {
   flags: 'SYN начинает соединение, ACK подтверждает номера последовательности. Один произвольный ACK не создаёт соединение.',
   dnsName: 'DNS-сервер знает A-запись lab.test. Другие имена вернут NXDOMAIN; это ответ, а не отсутствие связи.',
 }
-export function PacketBuilder({ draft, onChange, module, options, onOptions, onSend, disabled }: {
+export function PacketBuilder({ draft, onChange, module, options, onOptions, onSend, disabled, hideConditions = false }: {
   draft: PacketDraft; onChange: (draft: PacketDraft) => void; module: ModuleId; options: WorldOptions
-  onOptions: (options: WorldOptions) => void; onSend: () => void; disabled: boolean
+  onOptions: (options: WorldOptions) => void; onSend: () => void; disabled: boolean; hideConditions?: boolean
 }) {
   const [focus, setFocus] = useState<keyof typeof HELP>('destinationIp')
   const update = <K extends keyof PacketDraft>(key: K, value: PacketDraft[K]) => onChange({ ...draft, [key]: value })
@@ -35,14 +35,15 @@ export function PacketBuilder({ draft, onChange, module, options, onOptions, onS
       <details className="net-wide"><summary>Ethernet: задать MAC вручную</summary><label>MAC назначения<input aria-label="MAC назначения" value={draft.destinationMac} placeholder="Пусто — определить через ARP" onFocus={() => setFocus('destinationMac')} onChange={e => update('destinationMac', e.target.value)} spellCheck={false} /></label></details>
     </div>
     <p className="net-field-help"><span>↳</span> {HELP[focus]}</p>
-    <details className="net-conditions"><summary>Условия сети <span>вмешайся в мир</span></summary>
+    {!hideConditions && <details className="net-conditions"><summary>Условия сети <span>вмешайся в мир</span></summary>
       <label><input type="checkbox" checked={!options.cableOff} onChange={e => onOptions({ ...options, cableOff: !e.target.checked })} /> Кабель сервера подключён</label>
+      {module === 'subnet' && <label>Префикс клиента /<select aria-label="Префикс клиента" value={options.clientPrefix} onChange={e => onOptions({ ...options, clientPrefix: Number(e.target.value) })}>{[24, 25, 26, 27, 28, 29, 30, 32].map(prefix => <option key={prefix} value={prefix}>/{prefix}</option>)}</select></label>}
       {(module === 'routing' || module === 'nat') && <label><input type="checkbox" checked={!options.noGateway} onChange={e => onOptions({ ...options, noGateway: !e.target.checked })} /> Default route у клиента</label>}
       {module === 'nat' && <label><input type="checkbox" checked={options.natEnabled} onChange={e => onOptions({ ...options, natEnabled: e.target.checked })} /> SNAT включён</label>}
       {module === 'tcp' && <label><input type="checkbox" checked={options.blockPort === 80} onChange={e => onOptions({ ...options, blockPort: e.target.checked ? 80 : -1 })} /> Firewall: DROP TCP/80</label>}
       {module === 'dns' && <label><input type="checkbox" checked={!options.dnsDown} onChange={e => onOptions({ ...options, dnsDown: !e.target.checked })} /> DNS-сервис запущен</label>}
       <p>Изменение условий создаёт новый мир и очищает таблицы. Изменение полей пакета сохраняет мир.</p>
-    </details>
+    </details>}
     {error && <p className="net-input-error" role="alert">{error}</p>}
     {disabled && <p className="net-form-note">Дождись конца или перейди к результату, чтобы отправить следующий пакет.</p>}
   </section>

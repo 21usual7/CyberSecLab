@@ -1,7 +1,7 @@
 /** Pure, deterministic Ethernet/IPv4/transport teaching model. No host I/O. */
 import { BROADCAST } from './types'
 import type { Device, DeviceId, Frame, Interface, NetworkEvent, Packet, PacketDraft, Snapshot, World } from './types'
-import { findRoute, validIp } from './topology'
+import { findRoute, ipNumber, validIp } from './topology'
 export { createNetwork, defaultDraft, findRoute, contains, validIp } from './topology'
 export type { DeviceId, Snapshot } from './types'
 
@@ -38,12 +38,14 @@ export function simulate(initial: World, draft: PacketDraft): Snapshot[] {
   // Ethernet delivery follows physical links. Switches inspect MACs, not IPs.
   function ethernet(source: Device, intf: Interface, frame: Frame): { device: Device; frame: Frame }[] {
     const received: { device: Device; frame: Frame }[] = []
+    if (intf.up === false) { drop(source.id, 'Интерфейс выключен', `${intf.name} административно отключён. Для отправки нужен no shutdown.`, 'interface-down', frame.packet); return received }
     const queue: { from: DeviceId; to: DeviceId }[] = [{ from: source.id, to: intf.peer }]
     while (queue.length) {
       const { from, to } = queue.shift()!
       const link = world.links.find(l => (l.a === from && l.b === to) || (l.b === from && l.a === to))
       if (!link?.connected) { drop(from, 'Линия оборвана: кадр не дошёл', `Между ${world.devices[from]!.name} и ${world.devices[to]!.name} отключён кабель. Адреса верны, но физической доставки нет.`, 'cable', frame.packet); continue }
       const target = world.devices[to]!
+      if (target.interfaces.find(i => i.peer === from)?.up === false) { drop(to, 'Входной интерфейс выключен', 'Кадр не принят: интерфейс административно отключён.', 'interface-down', frame.packet); continue }
       emit({ title: `${frame.kind === 'IP' ? frame.packet!.label : frame.kind}: ${world.devices[from]!.name} → ${target.name}`, explanation: `По линии передаётся Ethernet-кадр: ${frame.source} → ${frame.destination}. ${frame.kind === 'IP' ? `Он несёт ${frame.packet!.protocol} внутри IPv4. Данные «${frame.packet!.payload.slice(0, 70)}» остаются частью пакета.` : 'ARP вложен прямо в Ethernet: IP-заголовка здесь нет.'}`, why: 'На этом участке доставки MAC задаёт ближайшего получателя кадра. IP задаёт конечную цель пакета.', layer: frame.kind === 'IP' ? 'Ethernet → IPv4 → ' + frame.packet!.protocol : 'Ethernet → ARP', phase: 'flight', from, to, frame, packet: frame.packet })
       if (target.kind === 'switch') {
         target.fdb[frame.source] = from
@@ -129,9 +131,24 @@ export function simulate(initial: World, draft: PacketDraft): Snapshot[] {
       const recipient = results[0]?.device
       if (!recipient) return
       emit({ at: recipient.id, title: `${recipient.name}: снимаем Ethernet-оболочку`, explanation: `MAC принят. Внутри IPv4: ${packet.sourceIp} → ${packet.destinationIp}, TTL ${packet.ttl}. Дальше решение принимает IP-слой.`, why: 'Доставка кадра к сетевой карте ещё не означает доставку пакета нужному процессу.', layer: 'Ethernet → IPv4', phase: 'receive', packet, code: 'decapsulate' })
+      if (recipient.kind === 'router') {
+        const ingress = recipient.interfaces.find(i => i.mac === mac) || recipient.interfaces[0]
+        if (ingress.aclIn) {
+          const matches = (ip: string, match: { ip: string; wildcard: string }) => ((ipNumber(ip) & ~ipNumber(match.wildcard)) >>> 0) === ((ipNumber(match.ip) & ~ipNumber(match.wildcard)) >>> 0)
+          const rules = world.acls[ingress.aclIn] || []
+          const index = rules.findIndex(rule => (rule.protocol === 'ip' || rule.protocol === packet.protocol.toLowerCase()) && matches(packet.sourceIp, rule.source) && matches(packet.destinationIp, rule.destination) && (rule.port === undefined || rule.port === packet.destinationPort))
+          const rule = rules[index]
+          if (rule) rule.hits++
+          if (!rule || rule.action === 'deny') { drop(recipient.id, `ACL ${ingress.aclIn}: DENY`, `${ingress.name} in: ${rule ? `сработало правило ${index + 1}` : 'не совпало ни одно правило — implicit deny'}. Пакет ${packet.protocol} ${packet.sourceIp} → ${packet.destinationIp}:${packet.destinationPort} остановлен до маршрутизации.`, 'acl-deny', packet); return }
+          decision(recipient.id, `ACL ${ingress.aclIn}: PERMIT`, `Правило ${index + 1} разрешило пакет на входе ${ingress.name}. Далее нужен подходящий маршрут.`, 'ACL проверяется сверху вниз до первого совпадения. Разрешение фильтра не гарантирует доставку.', 'ACL', 'acl-permit', packet)
+        }
+      }
       // A NAT reply to the WAN address must be translated before local delivery.
       const natReply = recipient.id === 'router' && world.module === 'nat' && packet.destinationIp === '203.0.113.1'
-      if (recipient.interfaces.some(i => i.ip === packet.destinationIp) && !natReply) return { device: recipient, packet }
+      if (recipient.interfaces.some(i => i.ip === packet.destinationIp) && !natReply) {
+        decision(recipient.id, 'IP назначения принадлежит этому устройству', `${packet.destinationIp} совпал с локальным адресом. Следующий обработчик — ${packet.protocol}.`, 'Ethernet довёл кадр до интерфейса; IP-слой проверил конечный адрес и передаёт содержимое нужному протоколу.', 'IPv4', 'ip-local', packet)
+        return { device: recipient, packet }
+      }
       if (recipient.kind !== 'router') { drop(recipient.id, 'IP не принадлежит получателю', `Ethernet доставлен сюда, но ${packet.destinationIp} не является адресом этого компьютера. Пересылка на обычном хосте отключена.`, 'wrong-ip', packet); return }
       device = recipient
     }

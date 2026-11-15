@@ -40,15 +40,18 @@ they never add a path to real hardware, real timers, or code generation.
 
 ## Networking expansion — 2026-11-15
 
-Five live networking modules are available at `#/network`: Ethernet/ARP/ICMP,
-IPv4 routing/TTL, NAT, TCP/port states/HTTP, and DNS/UDP/cache. There are 15
+Eight live networking modules are available at `#/network`: Ethernet/ARP/ICMP,
+subnetting, IPv4 routing/TTL, NAT, TCP/HTTP, DNS, unknown-fault diagnosis and a
+final Cisco-style configuration / ACL lab. There are 19
 original experiments aligned with networking topics from HTB Foundations and
 Penetration Tester, with editable packets, continuous pausable flight, layer
-inspection, device-state rewind and observation checks. See
+inspection, device-state rewind, predictions, attempt comparison, internal
+processing views and observation checks. The final lab proves five explicit
+connectivity/access requirements using the same packet model. See
 [`src/network/README.md`](src/network/README.md) for contracts and boundaries.
 
-Next networking foundations: richer subnetting, DHCP, DNS recursion, TCP loss /
-retransmission, stateful firewall rules and multi-subnet segmentation. Preserve
+Next networking foundations: DHCP, DNS recursion, TCP loss /
+retransmission, stateful firewall rules, VLAN/trunk models and multi-router segmentation. Preserve
 the sequence: manipulate a mechanism, observe consequences, explain why.
 
 ## 3. Current status — v0.1 (shipped)

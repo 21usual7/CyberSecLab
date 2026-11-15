@@ -42,9 +42,9 @@ export function Home({ navigate }: { navigate: (hash: string) => void }) {
             Почувствуй путь пакета
           </div>
           <p className="mt-2" style={{ color: 'var(--text-dim)' }}>
-            Собери свой пакет и останови его в полёте. Пять живых модулей:
-            Ethernet и ARP, маршрутизация, NAT, TCP и HTTP, DNS.
-            Меняй условия и наблюдай, как устройства принимают решения.
+            Собери пакет, предскажи результат и останови его в полёте.
+            Восемь модулей: от ARP и маски подсети до диагностики
+            и настройки защищённой сети в учебном CLI.
           </p>
         </button>
         <div className="panel-title">Labs</div>

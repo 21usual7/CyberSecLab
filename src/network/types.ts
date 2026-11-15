@@ -1,20 +1,22 @@
 export type DeviceId = 'a' | 'switch' | 'router' | 'b'
-export type ModuleId = 'ethernet' | 'routing' | 'nat' | 'tcp' | 'dns'
+export type ModuleId = 'ethernet' | 'routing' | 'nat' | 'tcp' | 'dns' | 'subnet' | 'diagnostic' | 'workshop'
 export type Protocol = 'ICMP' | 'TCP' | 'UDP'
-export interface Interface { name: string; ip: string; prefix: number; mac: string; peer: DeviceId }
+export interface Interface { name: string; ip: string; prefix: number; mac: string; peer: DeviceId; up?: boolean; aclIn?: string }
 export interface Route { network: string; prefix: number; gateway?: string; iface: string }
 export interface Device {
   id: DeviceId; name: string; kind: 'host' | 'switch' | 'router'; x: number; y: number
   interfaces: Interface[]; routes: Route[]; arp: Record<string, string>; fdb: Record<string, DeviceId>
   sockets: Record<string, string>; dnsCache: Record<string, string>
 }
+export interface AddressMatch { ip: string; wildcard: string }
+export interface ACLRule { action: 'permit' | 'deny'; protocol: 'ip' | 'tcp' | 'udp' | 'icmp'; source: AddressMatch; destination: AddressMatch; port?: number; hits: number }
 export interface NatEntry { privateIp: string; privatePort: number; publicIp: string; publicPort: number; remoteIp: string; remotePort: number; protocol: Protocol }
 export interface World {
   module: ModuleId; devices: Partial<Record<DeviceId, Device>>
   links: { a: DeviceId; b: DeviceId; connected: boolean }[]
-  nat: NatEntry[]; nextPacket: number; options: WorldOptions
+  acls: Record<string, ACLRule[]>; nat: NatEntry[]; nextPacket: number; options: WorldOptions
 }
-export interface WorldOptions { cableOff: boolean; noGateway: boolean; natEnabled: boolean; blockPort: number; dnsDown: boolean }
+export interface WorldOptions { cableOff: boolean; noGateway: boolean; natEnabled: boolean; blockPort: number; dnsDown: boolean; clientPrefix: number }
 export interface Packet {
   id: number; protocol: Protocol; sourceIp: string; destinationIp: string; ttl: number
   sourcePort: number; destinationPort: number; flags: string; seq: number; ack: number
@@ -37,4 +39,4 @@ export interface PacketDraft {
   mode: 'exchange' | 'raw' | 'syn' | 'http'
 }
 export const BROADCAST = 'ff:ff:ff:ff:ff:ff'
-export const DEFAULT_OPTIONS: WorldOptions = { cableOff: false, noGateway: false, natEnabled: true, blockPort: -1, dnsDown: false }
+export const DEFAULT_OPTIONS: WorldOptions = { cableOff: false, noGateway: false, natEnabled: true, blockPort: -1, dnsDown: false, clientPrefix: 24 }

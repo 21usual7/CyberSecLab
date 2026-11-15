@@ -54,9 +54,10 @@ speculation never changes the architectural result — only the cache side effec
 ## Develop
 
 Interactive networking modules are available at `#/network` (or **Сети**):
-Ethernet/ARP/ICMP, routing/TTL, NAT, TCP/port states/HTTP, and DNS/UDP/cache.
+Ethernet/ARP/ICMP, subnetting, routing/TTL, NAT, TCP/HTTP, DNS, diagnosis,
+and a final Cisco-style configuration and ACL verification lab.
 Craft packets, pause them mid-flight, inspect protocol layers and device tables,
-and investigate 15 practical experiments. The deterministic engine, continuous
+compare attempts, make predictions, and investigate 19 practical experiments. The deterministic engine, continuous
 2D renderer, HTB topic references and model limits are documented in
 [`src/network/README.md`](src/network/README.md).
 

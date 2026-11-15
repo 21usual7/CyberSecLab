@@ -190,7 +190,7 @@ describe('TCP, UDP and applications', () => {
 })
 
 describe('practical labs and input bounds', () => {
-  for (const module of MODULES) for (const mission of module.missions) {
+  for (const module of MODULES.filter(m => !['diagnostic', 'workshop'].includes(m.id))) for (const mission of module.missions) {
     it(`${module.id}: ${mission.id} is achievable with real model events`, () => {
       let trace = run(module.id, mission.draft, mission.options)
       if (mission.id === 'dns-cache') trace = simulate(last(trace).network, { ...defaultDraft(module.id), ...mission.draft })

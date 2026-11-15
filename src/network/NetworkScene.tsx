@@ -24,15 +24,16 @@ export function NetworkScene({ snapshot, selected, onSelect, progress }: {
       <linearGradient id={`screen-${unique}`} x2="1" y2="1"><stop stopColor="var(--panel)" /><stop offset="1" stopColor="var(--panel-2)" /></linearGradient>
     </defs>
     <rect width="960" height="380" fill={`url(#grid-${unique})`} />
-    <text x="32" y="34" className="net-zone-label">{network.devices.router ? 'LAN / 192.168.1.0/24' : 'ETHERNET / 192.168.1.0/24'}</text>
+    <text x="32" y="34" className="net-zone-label">{network.module === 'subnet' ? 'ОБЩИЙ ETHERNET · МАСКА ОПРЕДЕЛЯЕТ IP-СОСЕДСТВО' : network.devices.router ? 'LAN / 192.168.1.0/24' : 'ETHERNET / 192.168.1.0/24'}</text>
     {network.devices.router && <><path d="M 680 52 V 350" className="net-boundary" /><text x="705" y="34" className="net-zone-label">WAN / 203.0.113.0/24</text></>}
     {network.links.map(link => {
       const a = network.devices[link.a]!, b = network.devices[link.b]!
+      const visibleConnected = link.connected || network.module === 'diagnostic' && event.phase === 'idle'
       const active = source && target && ((source.id === a.id && target.id === b.id) || (source.id === b.id && target.id === a.id))
       return <g key={link.a + link.b}>
-        <path d={`M ${a.x} ${a.y} H ${b.x}`} className={`net-cable ${link.connected ? '' : 'off'}`} />
+        <path d={`M ${a.x} ${a.y} H ${b.x}`} className={`net-cable ${visibleConnected ? '' : 'off'}`} />
         <path d={`M ${a.x} ${a.y + 6} H ${b.x}`} className="net-cable-shadow" />
-        <text x={(a.x + b.x) / 2} y={a.y + 40} className="net-wire-label">{link.connected ? 'Ethernet' : '✕ кабель отключён'}</text>
+        <text x={(a.x + b.x) / 2} y={a.y + 40} className="net-wire-label">{visibleConnected ? 'Ethernet' : '✕ кабель отключён'}</text>
         {active && <><path d={`M ${source.x} ${source.y} H ${target.x}`} stroke={color} strokeWidth="3" opacity=".17" /><path d={`M ${source.x} ${source.y} H ${px}`} stroke={color} strokeWidth="3" opacity=".8" /></>}
       </g>
     })}
