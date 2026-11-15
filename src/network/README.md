@@ -40,7 +40,11 @@ and [Network Enumeration with Nmap](https://academy.hackthebox.com/course/previe
 - `Inspectors.tsx`: Ethernet/IP/transport/data inspection and device tables.
 - `labs.ts`: 15 experiments and evidence-based observation checks.
 - `../pages/NetworkLab.tsx`: playback, branching history, module/mission selection,
-  exchange comparison, and optional localStorage observation progress.
+  exchange comparison, and optional localStorage observation progress. The default
+  view shows one experiment, the scene, and the current explanation. Module
+  navigation is opened on demand; crafting, packet inspection, device state and
+  history share a single optional tool panel. Clicking a device opens its state
+  and pauses playback. Closing the panel restores focus to its toolbar button.
 
 Only events reached by the playhead contribute to observation checks. Checking
 an observation is not a claim of learner mastery. Cached state survives repeated
@@ -80,7 +84,9 @@ npm run dev -- --host 127.0.0.1
 node scripts/check-network-browser.mjs
 ```
 
-Browser checks cover real packet motion, pause/resume, custom payload, rewind,
+Browser checks cover the focused initial layout, single-panel navigation,
+device inspection and focus restoration, real packet motion, pause/resume,
+custom payload, rewind,
 cache reuse, all 15 missions, NAT table inspection, validation, narrow-screen
 layout, persisted observation progress, and runtime exceptions. Screenshots are
 written to the system temporary directory. An optional URL argument can point
