@@ -42,8 +42,9 @@ export function Home({ navigate }: { navigate: (hash: string) => void }) {
             Почувствуй путь пакета
           </div>
           <p className="mt-2" style={{ color: 'var(--text-dim)' }}>
-            Два компьютера, коммутатор и первый ping. Проследи ARP и ICMP,
-            загляни в таблицы устройств, отключи кабель и вернись к причине сбоя.
+            Собери свой пакет и останови его в полёте. Пять живых модулей:
+            Ethernet и ARP, маршрутизация, NAT, TCP и HTTP, DNS.
+            Меняй условия и наблюдай, как устройства принимают решения.
           </p>
         </button>
         <div className="panel-title">Labs</div>

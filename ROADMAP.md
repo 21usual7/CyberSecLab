@@ -1,6 +1,6 @@
 # CPU Labs — Roadmap
 
-Living plan for the project. Status as of **2026-11-11**.
+Living plan for the project. Status as of **2026-11-15**.
 
 - **Repo:** https://github.com/21usual7/CyberSecLab
 - **Live:** https://21usual7.github.io/CyberSecLab/
@@ -37,6 +37,19 @@ Every new feature must preserve this. New labs explain concepts and defences;
 they never add a path to real hardware, real timers, or code generation.
 
 ---
+
+## Networking expansion — 2026-11-15
+
+Five live networking modules are available at `#/network`: Ethernet/ARP/ICMP,
+IPv4 routing/TTL, NAT, TCP/port states/HTTP, and DNS/UDP/cache. There are 15
+original experiments aligned with networking topics from HTB Foundations and
+Penetration Tester, with editable packets, continuous pausable flight, layer
+inspection, device-state rewind and observation checks. See
+[`src/network/README.md`](src/network/README.md) for contracts and boundaries.
+
+Next networking foundations: richer subnetting, DHCP, DNS recursion, TCP loss /
+retransmission, stateful firewall rules and multi-subnet segmentation. Preserve
+the sequence: manipulate a mechanism, observe consequences, explain why.
 
 ## 3. Current status — v0.1 (shipped)
 

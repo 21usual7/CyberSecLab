@@ -53,10 +53,11 @@ speculation never changes the architectural result — only the cache side effec
 
 ## Develop
 
-The first interactive networking module is available at `#/network` (or the
-**Сети** button): two hosts, a learning Ethernet switch, ARP and ICMP Echo,
-animated frame delivery, device tables, rewind and failure experiments.
-Its deterministic engine and replaceable 2D renderer are documented in
+Interactive networking modules are available at `#/network` (or **Сети**):
+Ethernet/ARP/ICMP, routing/TTL, NAT, TCP/port states/HTTP, and DNS/UDP/cache.
+Craft packets, pause them mid-flight, inspect protocol layers and device tables,
+and investigate 15 practical experiments. The deterministic engine, continuous
+2D renderer, HTB topic references and model limits are documented in
 [`src/network/README.md`](src/network/README.md).
 
 ```bash
