@@ -53,6 +53,12 @@ speculation never changes the architectural result — only the cache side effec
 
 ## Develop
 
+The first interactive networking module is available at `#/network` (or the
+**Сети** button): two hosts, a learning Ethernet switch, ARP and ICMP Echo,
+animated frame delivery, device tables, rewind and failure experiments.
+Its deterministic engine and replaceable 2D renderer are documented in
+[`src/network/README.md`](src/network/README.md).
+
 ```bash
 npm install
 npm run dev        # Vite dev server

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Home } from './pages/Home'
 import { LabPage } from './pages/LabPage'
 import { Sandbox } from './pages/Sandbox'
+import { NetworkLab } from './pages/NetworkLab'
 
 function useHashRoute() {
   const [hash, setHash] = useState(
@@ -32,6 +33,7 @@ function App() {
 
   let page
   if (labMatch) page = <LabPage id={labMatch[1]} navigate={navigate} />
+  else if (hash.startsWith('#/network')) page = <NetworkLab />
   else if (hash.startsWith('#/sandbox')) page = <Sandbox navigate={navigate} />
   else page = <Home navigate={navigate} />
 
@@ -53,6 +55,9 @@ function App() {
           <span style={{ color: 'var(--accent)' }}>///</span> CPU&nbsp;Labs
         </button>
         <div className="flex items-center gap-2">
+          <button className="btn" onClick={() => navigate('#/network')}>
+            Сети
+          </button>
           <button className="btn" onClick={() => navigate('#/sandbox')}>
             Sandbox
           </button>

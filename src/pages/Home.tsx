@@ -33,6 +33,19 @@ export function Home({ navigate }: { navigate: (hash: string) => void }) {
       </section>
 
       <section className="flex flex-col gap-3">
+        <button
+          onClick={() => navigate('#/network')}
+          className="panel p-5 text-left hover:border-[var(--accent)] transition-colors"
+        >
+          <div className="panel-title">Новый модуль · Сети</div>
+          <div className="text-xl font-semibold mt-2" style={{ color: 'var(--text-hi)' }}>
+            Почувствуй путь пакета
+          </div>
+          <p className="mt-2" style={{ color: 'var(--text-dim)' }}>
+            Два компьютера, коммутатор и первый ping. Проследи ARP и ICMP,
+            загляни в таблицы устройств, отключи кабель и вернись к причине сбоя.
+          </p>
+        </button>
         <div className="panel-title">Labs</div>
         <div className="grid gap-3 sm:grid-cols-2">
           {LABS.map((lab) => (
